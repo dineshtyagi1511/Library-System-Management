@@ -403,6 +403,87 @@ JOIN branch AS b
 GROUP BY e.emp_name, b.branch_id, b.manager_id, b.branch_address;
 ```
 
-**Task 18: Identify Members Issuing High-Risk Books**  
-Write a query to identify members who have issued books more than twice with the status "damaged" in the books table. Display the member name, book title, and the number of times they've issued damaged books.    
+**Task 18: Stored Procedure**
+Objective:
+Create a stored procedure to manage the status of books in a library system.
+Description:
+Write a stored procedure that updates the status of a book in the library based on its issuance. The procedure should function as follows:
+The stored procedure should take the book_id as an input parameter.
+The procedure should first check if the book is available (status = 'yes').
+If the book is available, it should be issued, and the status in the books table should be updated to 'no'.
+If the book is not available (status = 'no'), the procedure should return an error message indicating that the book is currently not available.
 
+```sql
+DELIMITER //
+
+CREATE PROCEDURE issue_book(
+    IN p_issued_id VARCHAR(10),
+    IN p_issued_member_id VARCHAR(10),
+    IN p_issued_book_isbn VARCHAR(20),
+    IN p_issued_emp_id VARCHAR(10)
+)
+BEGIN
+    DECLARE v_status VARCHAR(10);
+    
+    -- Check if book is available ('yes')
+    SELECT status INTO v_status
+    FROM books
+    WHERE isbn = p_issued_book_isbn;
+    
+    IF v_status = 'yes' THEN
+        -- Insert issue record
+        INSERT INTO issued_status(issued_id, issued_member_id, issued_date, issued_book_isbn, issued_emp_id)
+        VALUES (p_issued_id, p_issued_member_id, CURDATE(), p_issued_book_isbn, p_issued_emp_id);
+        
+        -- Update book status to unavailable
+        UPDATE books
+        SET status = 'no'
+        WHERE isbn = p_issued_book_isbn;
+        
+        -- Return success message
+        SELECT CONCAT('Book records added successfully for book isbn: ', p_issued_book_isbn) AS message;
+    ELSE
+        -- Return unavailable message
+        SELECT CONCAT('Sorry to inform you the book you have requested is unavailable book_isbn: ', p_issued_book_isbn) AS message;
+    END IF;
+END //
+
+DELIMITER ;
+
+-- Testing the procedure
+-- Check initial book statuses
+SELECT * FROM books;
+-- Note: "978-0-553-29698-2" has status 'yes'
+--       "978-0-375-41398-8" has status 'no'
+
+-- Check current issued books
+SELECT * FROM issued_status;
+
+-- Test 1: Try to issue an available book
+CALL issue_book('IS155', 'C108', '978-0-553-29698-2', 'E104');
+
+-- Test 2: Try to issue an unavailable book
+CALL issue_book('IS156', 'C108', '978-0-375-41398-8', 'E104');
+
+-- Verify the book status changes
+SELECT * FROM books
+WHERE isbn = '978-0-553-29698-2' OR isbn = '978-0-375-41398-8';
+
+-- Check if new records were added to issued_status
+SELECT * FROM issued_status
+WHERE issued_id IN ('IS155', 'IS156');
+
+-- Verify the unavailable book wasn't issued
+SELECT * FROM issued_status
+WHERE issued_book_isbn = '978-0-375-41398-8';
+```
+
+## Reports
+
+- **Database Schema**: Detailed table structures and relationships.
+- **Data Analysis**: Insights into book categories, employee salaries, member registration trends, and issued books.
+- **Summary Reports**: Aggregated data on high-demand books and employee performance.
+
+## Conclusion
+
+This project demonstrates the application of SQL skills in creating and managing a library management system. It includes database setup, data manipulation, and advanced querying, providing a solid foundation for data management and analysis.
