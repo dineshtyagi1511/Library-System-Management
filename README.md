@@ -157,3 +157,71 @@ FROM issued_status
 GROUP BY 1
 HAVING COUNT(*) > 1
 ```
+
+### 3. CTAS (Create Table As Select)
+
+- **Task 6: Create Summary Tables**: Used CTAS to generate new tables based on query results - each book and total book_issued_cnt**
+
+```sql
+CREATE TABLE book_cnts AS    
+SELECT 
+    b.isbn,
+    b.book_title,
+    COUNT(ist.issued_id) AS no_issued
+FROM books AS b
+JOIN issued_status AS ist
+    ON ist.issued_book_isbn = b.isbn
+GROUP BY b.isbn, b.book_title;
+
+-- View the results
+SELECT * FROM book_cnts;
+```
+
+### 4. Data Analysis & Findings
+
+The following SQL queries were used to address specific questions:
+
+Task 7. **Retrieve All Books in a Specific Category**:
+
+```sql
+SELECT * FROM books
+WHERE category = 'Classic';
+```
+
+8. **Task 8: Find Total Rental Income by Category**:
+
+```sql
+SELECT 
+    b.category,
+    SUM(b.rental_price) AS total_rental_price,
+    COUNT(*) AS book_count
+FROM 
+    issued_status AS ist
+JOIN
+    books AS b
+    ON b.isbn = ist.issued_book_isbn
+GROUP BY b.category;
+```
+
+9. **List Members Who Registered in the Last 180 Days**:
+```sql
+SELECT * FROM members
+WHERE reg_date >= CURRENT_DATE - INTERVAL 180 DAY;
+```
+
+10. **List Employees with Their Branch Manager's Name and their branch details**:
+
+```sql
+SELECT 
+    e1.emp_id,
+    e1.emp_name,
+    e1.position,
+    e1.salary,
+    b.*,
+    e2.emp_name AS manager
+FROM employees AS e1
+JOIN branch AS b
+    ON e1.branch_id = b.branch_id    
+JOIN employees AS e2
+    ON e2.emp_id = b.manager_id;
+```
